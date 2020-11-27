@@ -1,0 +1,38 @@
+dist: xenial
+os: linux
+language: java
+cache:
+  directories:
+  - "~/.m2"
+branches:
+  only:
+  - master
+  - development
+install: ''
+services:
+- docker
+before_install:
+- docker version
+jobs:
+  fast_finish: true
+  include:
+  - jdk: openjdk11
+    env:
+    - DESC="build with OPENJDK11"
+    - USE_MAVEN_REPO="true"
+    - CMD="mvn clean package"
+env:
+  global:
+  - COMMIT=${TRAVIS_COMMIT::7}
+  - secure: Hiis5m5kJp3qaYs+sNntOUjoMz6kZrhWdEpKd+UiOLpZVa3qc1oMzAwgU6LD73GZ065mkVInqHWm3uyrEwgYI3DnHvzbCcxDIAJ5giKzupar5NOytiSZolYibpA0hpBE9Ezk8Y/gf5MXKPEkUXLAsXy97eHUj/i4af+ziYNZFETM0ij3acyYTdoWpp+GcGFNKc46HM4xGpwTl1gDPs89fMZd9bfyY7q46E13EI5TSyjudFnxmEMt1gv5D/bn/GexgL6/41S0vax2IXochqkPHzaKydpVzUJyCAXskICxDSJ1Y2aw+V87/2/zJN04mN8Sv8cLJSIrXbQq6yJPn6qX1d4wKH21HCjAWCKI3k8r/q3o2HsFeqFOmh7Kffd2YKSNg7OTFBvYCz+YfnrEJSQRrqZ4JDXiZlseieLOW1lG4kfmzxXco2YVUFjOID7s5QwQ5FdBNCTTddL0Y6LeR//c/Aae1G8bIwq8ucu7ci8hsjCSGzJT7qiloPBIao1pap4IFXfZyst+CvQefCaic+DX/rAyBhw8QvPHD2jrsPHNB6GPkbeUyOpLJyMdlCMTen/5xcDFHBpP8Jxwg6J/2AxO+OqzPOksom5AF2RLkccLvMyrLOvkyHDILEt0EarXY0OcxEU3XTFWCh7Uiu79dfqVwKqKpValKqbFqQeGfchz0Xs=
+  - secure: GZw39emFSf1a5lj0JHKBw/eTpTSNURbpBv3Y+VCE4qVuCCRDTdussN1OZqHhktoisLZAOqgBi6+EzMH3DWNqsl0445kke1cvPTeynefqX88yo7/yJwnEK192qQa2Hh19KjDF+IRQLWT0ZGbTGdzqxM/Rm2BYehlGS06t0YakOtzYFRk2DksixQuEQ7tPEqeSprR8wHorix12xcaSN3RzRcZd/Im6UHfIIukO5gZddp2izSheqbiMsAAK7B7z//dxZOZGb+CV4vbTyGfqLPPR69kC5yBr4HR413mUvZ8aNgMX3llUa/t6E57oh+QxSwqy4fzhfGu4NGgCvAi2AKpvmyt1FPrlbTcqzw9HyfDGR68agg9ghONfXEdNFZ6uvAEaxFwSZe8VyppZRkyopPYW2DpFepxa65CmtwnhOerykNhSOWrhLhSI6M54g3as8pRi0KBhmRfL9FIUlpU1zwbx2pvNTUDzp8Qomh6p0dRePps6G3qvMLo/o/jSflX0RtU99lWEeYCPP8gdG8QHmJdOBeu90f3ypwrWRVwnofIASAtJjzBx3p8RKA7h2GwvfSQdHf139BOcCSPdnrvEIhXV2GweJ5U6t0uXlRtsIRzKbeEtG2kfAojYETevm+LUOjTgt0B/t8pLCbAYmpb/czIJ37dFxZkxNCLMnlyYa+3EMSI=
+script:
+- mvn -f Gateway/ clean package -B
+after_success:
+- docker login -u $DOCKER_USER -p $DOCKER_PASS
+- export TAG=`if [ "$TRAVIS_BRANCH" == "development" ]; then echo "latest"; else echo
+  $TRAVIS_BRANCH ; fi`
+- export IMAGE_NAME=sombose/gateway
+- docker build -t $IMAGE_NAME:$COMMIT .
+- docker tag $IMAGE_NAME:$COMMIT $IMAGE_NAME:$TAG
+- docker push $IMAGE_NAME
